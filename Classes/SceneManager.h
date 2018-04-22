@@ -25,13 +25,14 @@ public:
 
 	void setupScene();
 	void setupCamera2D();
+	void setupTexture();
 
 private:
 	GLfloat x, y, left, right, up;
+	unsigned int texture;
 
 	GLFWwindow *window;
 	
-	// Shader Program
 	Shader *shader;
 	
 	// Scene attributes

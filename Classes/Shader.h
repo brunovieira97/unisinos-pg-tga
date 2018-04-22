@@ -5,8 +5,9 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include <GL/glew.h>
+#include <GLAD/glad.h>
 #include <GLFW/glfw3.h>
+#include "STB_Image.h"
 
 using namespace std;
 
