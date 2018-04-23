@@ -71,10 +71,14 @@ void SceneManager::resize(GLFWwindow * window, int width, int height) {
 void SceneManager::do_movement() {
 	if (keys[GLFW_KEY_LEFT]) {
 		left -= 0.001f;
+		//for (int i = 1; i <= 4; i++)
+		//	setupTexture(i, -1);
 	}
 
 	if (keys[GLFW_KEY_RIGHT]) {
 		left += 0.001f;
+		//for (int i = 1; i <= 4; i++)
+		//	setupTexture(i, 0);
 	}
 
 	if (keys[GLFW_KEY_ESCAPE])
@@ -180,7 +184,7 @@ void SceneManager::setupScene() {
 	glEnableVertexAttribArray(0);
 	
 	// Color
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 
 	// Texture coords
@@ -221,7 +225,7 @@ void SceneManager::setupTexture() {
 
 	// load image, create texture and generate mipmaps
 	int width, height, nrChannels;
-	unsigned char *data = stbi_load("../Resources/Character.png", &width, &height, &nrChannels, 0);
+	unsigned char *data = stbi_load("Resources/Character.png", &width, &height, &nrChannels, 0);
 	
 	if (data) {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
