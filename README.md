@@ -12,4 +12,4 @@ O trabalho consiste no desenvolvimento de uma cena ou jogo utilizando OpenGL.
 
 ## Autores
 * [brunovieira97](github.com/brunovieira97) - Bruno Vieira
-* [asuha](github.com/juliorenner) - Julio Renner
+* [juliorenner](github.com/juliorenner) - Julio Renner
