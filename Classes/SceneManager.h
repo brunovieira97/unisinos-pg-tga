@@ -9,27 +9,28 @@ class SceneManager {
 public:
 	SceneManager();
 	~SceneManager();
-	void initialize(GLuint width, GLuint height);
-	void initializeGraphics();
+	void Initialize(GLuint width, GLuint height);
+	void InitializeGraphics();
 
-	void addShader(string vFilename, string fFilename);
+	void AddShader(string vFilename, string fFilename);
 
 	//GLFW callbacks
-	static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
-	static void resize(GLFWwindow* window, int width, int height);
+	static void key_callback(GLFWwindow* window, int key, int scanCode, int action, int mode);
+	static void Resize(GLFWwindow* window, int width, int height);
 
-	void do_movement();
-	void render();
-	void run();
-	void finish();
+	void DoMovement();
+	void Render();
+	void Run();
+	void Finish();
 
-	void setupScene();
-	void setupCamera2D();
-	void setupTexture();
+	void SetupScene();
+	void SetupCamera2D();
+	void SetupTexture();
+	void SetupBackground();
 
 private:
-	GLfloat x, y, left, right, up;
-	unsigned int texture;
+	GLfloat x, y, horizontalPosition;
+	unsigned int texture, background;
 
 	GLFWwindow *window;
 	

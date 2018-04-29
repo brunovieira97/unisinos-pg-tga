@@ -5,11 +5,11 @@ using namespace std;
 int main() {
 	SceneManager *scene = new SceneManager;
 
-	scene -> initialize(1000, 800);
+	scene -> Initialize(802, 462);
 
-	scene -> run();
+	scene -> Run();
 
-	scene -> finish();
+	scene -> Finish();
 
 	return 0;
 }
