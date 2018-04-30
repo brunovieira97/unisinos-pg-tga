@@ -3,13 +3,19 @@ using namespace std;
 #include <Classes/SceneManager.h>
 
 int main() {
-	SceneManager *scene = new SceneManager;
+	try {
+		SceneManager *scene = new SceneManager;
 
-	scene -> Initialize(802, 462);
+		scene -> Initialize(802, 462);
 
-	scene -> Run();
+		scene -> Run();
 
-	scene -> Finish();
+		scene -> Finish();
+
+	} catch (const exception &e) {
+		std::cout << e.what() << std::endl;
+	}
 
 	return 0;
+	
 }
