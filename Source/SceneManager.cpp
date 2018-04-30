@@ -17,15 +17,18 @@ void SceneManager::Initialize(GLuint width, GLuint height) {
 }
 
 void SceneManager::InitializeGraphics() {
-	horizontalPosition = 0;
+	backgroundPosition = 0.0;
+	foregroundPosition = 0.0;
+	characterPosition = 0.85;
+	boxPosition = -0.85;
 
 	glfwInit();
 
-	window = glfwCreateWindow(width, height, "Game", nullptr, nullptr);
+	window = glfwCreateWindow(width, height, "This shouldn't be considered a game", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
 
 	// Set the required callback functions
-	glfwSetKeyCallback(window, key_callback);
+	glfwSetKeyCallback(window, KeyCallback);
 
 	glfwSetWindowSizeCallback(window, Resize);
 
@@ -33,7 +36,7 @@ void SceneManager::InitializeGraphics() {
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 		std::cout << "Failed to initialize GLAD" << std::endl;
 
-	AddShader("Shaders/Character.vs", "Shaders/Character.frag");
+	AddShader("Shaders/Shader.vs", "Shaders/Shader.frag");
 
 	SetupScene();
 
@@ -45,7 +48,7 @@ void SceneManager::AddShader(string vFilename, string fFilename) {
 	shader = new Shader(vFilename.c_str(), fFilename.c_str());
 }
 
-void SceneManager::key_callback(GLFWwindow * window, int key, int scanCode, int action, int mode) {
+void SceneManager::KeyCallback(GLFWwindow * window, int key, int scanCode, int action, int mode) {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
 	if (key >= 0 && key < 1024) {
@@ -62,18 +65,19 @@ void SceneManager::Resize(GLFWwindow * window, int width, int height) {
 	::resized = true;
 
 	// Define the viewport dimensions
-	glViewport(0, 0, width, height);
+	glViewport(0, 0, ::width, ::height);
 }
-
 
 void SceneManager::DoMovement() {
 	if (keys[GLFW_KEY_LEFT])
-		if ((horizontalPosition - 0.0025) > -0.925) 
-			horizontalPosition -= 0.0025f;
+		if ((characterPosition - 0.001) > -0.95) {
+			characterPosition -= 0.001f;
+		}
 
 	if (keys[GLFW_KEY_RIGHT])
-		if ((horizontalPosition + 0.0025) < 0.925) 
-			horizontalPosition += 0.0025f;
+		if ((characterPosition + 0.001) < 0.95) {
+			characterPosition += 0.001f;
+		}
 
 	if (keys[GLFW_KEY_ESCAPE])
 		glfwSetWindowShouldClose(window, GL_TRUE);
@@ -84,12 +88,18 @@ void SceneManager::Render() {
 	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// Render scene
+	RenderBackground();
+	RenderForeground();
+	RenderCharacter();
+	RenderBox();
+}
+
+void SceneManager::RenderBackground(){
 	shader -> Use();
 
 	// Create transformations 
 	model = glm::mat4();
-	model = glm::translate(model, glm::vec3(horizontalPosition, 0, 0));
+	model = glm::translate(model, glm::vec3(backgroundPosition, 0, 0));
 
 	GLint modelLoc = glGetUniformLocation(shader->Program, "model");
 
@@ -100,13 +110,89 @@ void SceneManager::Render() {
 		SetupCamera2D();
 		resized = false;
 	}
-	
-	glBindTexture(GL_TEXTURE_2D, texture);
+
+	glBindTexture(GL_TEXTURE_2D, backgroundTexture);
 	glUniform1i(glGetUniformLocation(shader -> Program, "texture"), 0);
 
-    // Render container
-    glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);	
+	// Render container
+	glBindVertexArray(bgVAO);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+}
+
+void SceneManager::RenderForeground(){
+	shader -> Use();
+
+	// Create transformations 
+	model = glm::mat4();
+	model = glm::translate(model, glm::vec3(foregroundPosition, 0, 0));
+
+	GLint modelLoc = glGetUniformLocation(shader->Program, "model");
+
+	// Passes transformations to Shaders
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+	if (resized) {
+		SetupCamera2D();
+		resized = false;
+	}
+
+	glBindTexture(GL_TEXTURE_2D, foregroundTexture);
+	glUniform1i(glGetUniformLocation(shader -> Program, "texture"), 0);
+
+	// Render container
+	glBindVertexArray(fgVAO);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+}
+
+void SceneManager::RenderCharacter(){
+	shader -> Use();
+
+	// Create transformations 
+	model = glm::mat4();
+	model = glm::translate(model, glm::vec3(characterPosition, 0, 0));
+
+	GLint modelLoc = glGetUniformLocation(shader->Program, "model");
+
+	// Passes transformations to Shaders
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+	if (resized) {
+		SetupCamera2D();
+		resized = false;
+	}
+
+	glBindTexture(GL_TEXTURE_2D, characterTexture);
+	glUniform1i(glGetUniformLocation(shader -> Program, "texture"), 0);
+
+	// Render container
+	glBindVertexArray(charVAO);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+}
+
+void SceneManager::RenderBox(){
+	shader -> Use();
+
+	// Create transformations 
+	model = glm::mat4();
+	model = glm::translate(model, glm::vec3(boxPosition, 0, 0));
+
+	GLint modelLoc = glGetUniformLocation(shader -> Program, "model");
+
+	// Passes transformations to Shaders
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+	if (resized) {
+		SetupCamera2D();
+		resized = false;
+	}
+
+	glBindTexture(GL_TEXTURE_2D, boxTexture);
+	glUniform1i(glGetUniformLocation(shader -> Program, "texture"), 0);
+
+	// Render container
+	glBindVertexArray(boxVAO);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
 	glBindVertexArray(0);
 }
 
@@ -122,59 +208,6 @@ void SceneManager::Run() {
 
 void SceneManager::Finish() {
 	glfwTerminate();
-}
-
-
-void SceneManager::SetupScene() {
-
-	/** 
-	 * 3-float values collections, in order:
-	 * 	Positions
-	 * 	Colors
-	 * 	Texture coordinates
-	 * Lines order:
-	 * 	Top right
-	 * 	Bottom right
-	 * 	Bottom horizontalPosition
-	 * 	Top horizontalPosition
-	**/
-	float character[] = {
-		 0.125f,	 0.125f, 0.0f,	1.0f, 0.0f, 0.0f,	1.0/4.0, 1.0/2.0,
-		 0.125f,	-0.125f, 0.0f,	0.0f, 1.0f, 0.0f,	1.0/4.0, 0.0f,
-		-0.125f,	-0.125f, 0.0f,	0.0f, 0.0f, 1.0f,	0.0f, 0.0f,
-		-0.125f,	 0.125f, 0.0f,	1.0f, 1.0f, 0.0f,	0.0f, 1.0/2.0  
-	};
-
-	// First line = first triangle and so on
-	unsigned int indices[] = {
-		0, 1, 3,
-		1, 2, 3 
-	};
-
-	unsigned int VBO, EBO;
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
-
-	glBindVertexArray(VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(character), character, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	// Position
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	// Texture coords
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-	glEnableVertexAttribArray(2);
-
-	SetupTexture();
-
-	glBindVertexArray(0);
 }
 
 void SceneManager::SetupCamera2D() {
@@ -194,27 +227,242 @@ void SceneManager::SetupCamera2D() {
 	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 }
 
-void SceneManager::SetupTexture() {
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture); 
+void SceneManager::SetupScene() {
+	SetupBackground();
+	SetupForeground();
+	SetupCharacter();
+	SetupBox();	
+}
+
+void SceneManager::SetupBackground(){
+	/** 
+	 * 3-float values collections, in order:
+	 * 	Positions
+	 * 	Colors
+	 * 	Texture coordinates
+	 * Lines order:
+	 * 	Top right
+	 * 	Bottom right
+	 * 	Bottom left
+	 * 	Top left
+	**/
+	float background[] = {
+		 1.000f,	 1.000f, 0.0f,	1.0f, 0.0f, 0.0f,	 1.0,		 1.0,
+		 1.000f,	-1.000f, 0.0f,	0.0f, 1.0f, 0.0f,	 1.0,		-1.0,
+		-1.000f,	-1.000f, 0.0f,	0.0f, 0.0f, 1.0f,	-1.0,		-1.0,
+		-1.000f,	 1.000f, 0.0f,	1.0f, 1.0f, 0.0f,	-1.0,		 1.0  
+	};
 	
+	// First line = first triangle and so on
+	unsigned int indices[] = {
+		0, 1, 3,
+		1, 2, 3 
+	};
+
+	unsigned int bgVBO, bgEBO;
+
+	glGenVertexArrays(1, &bgVAO);
+	glGenBuffers(1, &bgVBO);
+	glGenBuffers(1, &bgEBO);
+
+	glBindVertexArray(bgVAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, bgVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(background), background, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bgEBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	// Position
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	// Texture coords
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+
+	SetupBackgroundTexture();
+
+	glBindVertexArray(0);
+}
+
+void SceneManager::SetupForeground(){
+	/** 
+	 * 3-float values collections, in order:
+	 * 	Positions
+	 * 	Colors
+	 * 	Texture coordinates
+	 * Lines order:
+	 * 	Top right
+	 * 	Bottom right
+	 * 	Bottom left
+	 * 	Top left
+	**/
+	float foreground[] = {
+		 1.000f,	 1.000f, 0.0f,	1.0f, 0.0f, 0.0f,	 1.0,		 1.0,
+		 1.000f,	-1.000f, 0.0f,	0.0f, 1.0f, 0.0f,	 1.0,		-1.0,
+		-1.000f,	-1.000f, 0.0f,	0.0f, 0.0f, 1.0f,	-1.0,		-1.0,
+		-1.000f,	 1.000f, 0.0f,	1.0f, 1.0f, 0.0f,	-1.0,		 1.0  
+	};
+	
+	// First line = first triangle and so on
+	unsigned int indices[] = {
+		0, 1, 3,
+		1, 2, 3 
+	};
+
+	unsigned int fgVBO, fgEBO;
+
+	glGenVertexArrays(1, &fgVAO);
+	glGenBuffers(1, &fgVBO);
+	glGenBuffers(1, &fgEBO);
+
+	glBindVertexArray(fgVAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, fgVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(foreground), foreground, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fgEBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	// Position
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	// Texture coords
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+
+	SetupBackgroundTexture();
+
+	glBindVertexArray(0);
+}
+
+void SceneManager::SetupCharacter(){
+	/** 
+	 * 3-float values collections, in order:
+	 * 	Positions
+	 * 	Colors
+	 * 	Texture coordinates
+	 * Lines order:
+	 * 	Top right
+	 * 	Bottom right
+	 * 	Bottom left
+	 * 	Top left
+	**/
+	float character[] = {
+		 0.125f,	 0.125f, 0.0f,	1.0f, 0.0f, 0.0f,	1.0/4.0,	1.0/2.0,
+		 0.125f,	-0.125f, 0.0f,	0.0f, 1.0f, 0.0f,	1.0/4.0,	0.0f,
+		-0.125f,	-0.125f, 0.0f,	0.0f, 0.0f, 1.0f,	0.0f,		0.0f,
+		-0.125f,	 0.125f, 0.0f,	1.0f, 1.0f, 0.0f,	0.0f,		1.0/2.0  
+	};
+	
+	// First line = first triangle and so on
+	unsigned int indices[] = {
+		0, 1, 3,
+		1, 2, 3 
+	};
+
+	unsigned int charVBO, charEBO;
+
+	glGenVertexArrays(1, &charVAO);
+	glGenBuffers(1, &charVBO);
+	glGenBuffers(1, &charEBO);
+
+	glBindVertexArray(charVAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, charVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(character), character, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, charEBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	// Position
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	// Texture coords
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+
+	SetupCharacterTexture();
+
+	glBindVertexArray(0);
+}
+
+void SceneManager::SetupBox(){
+	/** 
+	 * 3-float values collections, in order:
+	 * 	Positions
+	 * 	Colors
+	 * 	Texture coordinates
+	 * Lines order:
+	 * 	Top right
+	 * 	Bottom right
+	 * 	Bottom left
+	 * 	Top left
+	**/
+	float box[] = {
+		 0.125f,	 0.125f, 0.0f,	1.0f, 0.0f, 0.0f,	 1.0f,		 1.0f,
+		 0.125f,	-0.125f, 0.0f,	0.0f, 1.0f, 0.0f,	 1.0f,		-1.0f, 
+		-0.125f,	-0.125f, 0.0f,	0.0f, 0.0f, 1.0f,	-1.0f,		-1.0f,
+		-0.125f,	 0.125f, 0.0f,	1.0f, 1.0f, 0.0f,	-1.0f,		 1.0f  
+	};
+
+	// First line = first triangle and so on
+	unsigned int indices[] = {
+		0, 1, 3,
+		1, 2, 3 
+	};
+
+	unsigned int boxVBO, boxEBO;
+
+	glGenVertexArrays(1, &boxVAO);
+	glGenBuffers(1, &boxVBO);
+	glGenBuffers(1, &boxEBO);
+
+	glBindVertexArray(boxVAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, boxVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(box), box, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, boxEBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	// Position
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	// Texture coords
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+
+	SetupBoxTexture();
+
+	glBindVertexArray(0);
+}
+
+void SceneManager::SetupBackgroundTexture(){
+	glGenTextures(1, &backgroundTexture);
+	glBindTexture(GL_TEXTURE_2D, backgroundTexture); 
+
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	
+
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	// Loads image, creates texture and generates mipmaps
-	int width, height, nrChannels;
-	unsigned char *data = stbi_load("Resources/Character.png", &width, &height, &nrChannels, 0);
-	
-	if (data) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+	int bgWidth, bgHeight, bgNrChannels;
+	unsigned char *bgData = stbi_load("Resources/Background.png", &bgWidth, &bgHeight, &bgNrChannels, 0);
+
+	if (bgData) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bgWidth, bgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, bgData);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	} else {
-		std::cout << "Failed to load texture" << std::endl;
+		std::cout << "Failed to load background texture" << std::endl;
 	}
-	stbi_image_free(data);
+	stbi_image_free(bgData);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -224,6 +472,92 @@ void SceneManager::SetupTexture() {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-void SceneManager::SetupBackground(){
+void SceneManager::SetupForegroundTexture(){
+	glGenTextures(1, &foregroundTexture);
+	glBindTexture(GL_TEXTURE_2D, foregroundTexture); 
 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	// Loads image, creates texture and generates mipmaps
+	int fgWidth, fgHeight, fgNrChannels;
+	unsigned char *fgData = stbi_load("Resources/Foreground.png", &fgWidth, &fgHeight, &fgNrChannels, 0);
+
+	if (fgData) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fgWidth, fgHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, fgData);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	} else {
+		std::cout << "Failed to load foreground texture" << std::endl;
+	}
+	stbi_image_free(fgData);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	glActiveTexture(GL_TEXTURE0);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+void SceneManager::SetupCharacterTexture() {
+	glGenTextures(1, &characterTexture);
+	glBindTexture(GL_TEXTURE_2D, characterTexture); 
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	// Loads image, creates texture and generates mipmaps
+	int charWidth, charHeight, charNrChannels;
+	unsigned char *charData = stbi_load("Resources/Character.png", &charWidth, &charHeight, &charNrChannels, 0);
+
+	if (charData) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, charWidth, charHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, charData);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	} else {
+		std::cout << "Failed to load main character texture" << std::endl;
+	}
+	stbi_image_free(charData);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	glActiveTexture(GL_TEXTURE0);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+void SceneManager::SetupBoxTexture(){
+	glGenTextures(1, &boxTexture);
+	glBindTexture(GL_TEXTURE_2D, boxTexture); 
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	// Loads image, creates texture and generates mipmaps
+	int boxWidth, boxHeight, boxNrChannels;
+	unsigned char *boxData = stbi_load("Resources/TNT.jpg", &boxWidth, &boxHeight, &boxNrChannels, 0);
+
+	if (boxData) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, boxWidth, boxHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, boxData);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	} else {
+		std::cout << "Failed to load TNT box texture" << std::endl;
+	}
+	stbi_image_free(boxData);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	glActiveTexture(GL_TEXTURE0);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
