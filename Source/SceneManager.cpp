@@ -21,10 +21,13 @@ void SceneManager::InitializeGraphics() {
 	foregroundPosition = 0.0;
 	characterPosition = 0.85;
 	boxPosition = -0.85;
+	verticalPosition = -0.275;
+	offsetX = 0.0;
+	offsetY = 0.0;
 
 	glfwInit();
 
-	window = glfwCreateWindow(width, height, "This shouldn't be considered a game", nullptr, nullptr);
+	window = glfwCreateWindow(width, height, "Game", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
 
 	// Set the required callback functions
@@ -72,11 +75,28 @@ void SceneManager::DoMovement() {
 	if (keys[GLFW_KEY_LEFT])
 		if ((characterPosition - 0.001) > -0.95) {
 			characterPosition -= 0.001f;
+			backgroundPosition += 0.0002f;
+			foregroundPosition += 0.0005f;
+			boxPosition += 0.0005f;
+			offsetY = 1.0;
+			offsetX -= 1.0/4.0;
+
+			if(TestCollision()) {
+				Finish();
+				InitializeGraphics();
+				keys[GLFW_KEY_LEFT] = false;
+				std::cout << "You died!" << std::endl;
+			}
 		}
 
 	if (keys[GLFW_KEY_RIGHT])
 		if ((characterPosition + 0.001) < 0.95) {
 			characterPosition += 0.001f;
+			backgroundPosition -= 0.0002f;
+			foregroundPosition -= 0.0005f;
+			boxPosition -= 0.0005f;
+			offsetY = 1.0/2.0;
+			offsetX += 1.0/4.0;
 		}
 
 	if (keys[GLFW_KEY_ESCAPE])
@@ -100,6 +120,8 @@ void SceneManager::RenderBackground(){
 	// Create transformations 
 	model = glm::mat4();
 	model = glm::translate(model, glm::vec3(backgroundPosition, 0, 0));
+	glUniform1f(glGetUniformLocation(shader -> Program, "offsetx"), 0);
+	glUniform1f(glGetUniformLocation(shader -> Program, "offsety"), 0);
 
 	GLint modelLoc = glGetUniformLocation(shader->Program, "model");
 
@@ -125,6 +147,8 @@ void SceneManager::RenderForeground(){
 	// Create transformations 
 	model = glm::mat4();
 	model = glm::translate(model, glm::vec3(foregroundPosition, 0, 0));
+	glUniform1f(glGetUniformLocation(shader -> Program, "offsetx"), 0);
+	glUniform1f(glGetUniformLocation(shader -> Program, "offsety"), 0);
 
 	GLint modelLoc = glGetUniformLocation(shader->Program, "model");
 
@@ -149,7 +173,9 @@ void SceneManager::RenderCharacter(){
 
 	// Create transformations 
 	model = glm::mat4();
-	model = glm::translate(model, glm::vec3(characterPosition, 0, 0));
+	model = glm::translate(model, glm::vec3(characterPosition, verticalPosition, 1));
+	glUniform1f(glGetUniformLocation(shader -> Program, "offsetx"), offsetX);
+	glUniform1f(glGetUniformLocation(shader -> Program, "offsety"), offsetY);
 
 	GLint modelLoc = glGetUniformLocation(shader->Program, "model");
 
@@ -174,7 +200,9 @@ void SceneManager::RenderBox(){
 
 	// Create transformations 
 	model = glm::mat4();
-	model = glm::translate(model, glm::vec3(boxPosition, 0, 0));
+	model = glm::translate(model, glm::vec3(boxPosition, verticalPosition, 2));
+	glUniform1f(glGetUniformLocation(shader -> Program, "offsetx"), 0);
+	glUniform1f(glGetUniformLocation(shader -> Program, "offsety"), 0);
 
 	GLint modelLoc = glGetUniformLocation(shader -> Program, "model");
 
@@ -229,9 +257,16 @@ void SceneManager::SetupCamera2D() {
 
 void SceneManager::SetupScene() {
 	SetupBackground();
+	RenderBackground();
+
 	SetupForeground();
-	SetupCharacter();
+	RenderForeground();
+
 	SetupBox();	
+	RenderBox();
+
+	SetupCharacter();
+	RenderCharacter();
 }
 
 void SceneManager::SetupBackground(){
@@ -247,10 +282,10 @@ void SceneManager::SetupBackground(){
 	 * 	Top left
 	**/
 	float background[] = {
-		 1.000f,	 1.000f, 0.0f,	1.0f, 0.0f, 0.0f,	 1.0,		 1.0,
-		 1.000f,	-1.000f, 0.0f,	0.0f, 1.0f, 0.0f,	 1.0,		-1.0,
-		-1.000f,	-1.000f, 0.0f,	0.0f, 0.0f, 1.0f,	-1.0,		-1.0,
-		-1.000f,	 1.000f, 0.0f,	1.0f, 1.0f, 0.0f,	-1.0,		 1.0  
+		 2.000f,	 1.000f, 0.0f,	1.0f, 0.0f, 0.0f,	 1.0,		 1.0,
+		 2.000f,	-1.500f, 0.0f,	0.0f, 1.0f, 0.0f,	 1.0,		 0.0,
+		-4.000f,	-1.500f, 0.0f,	0.0f, 0.0f, 1.0f,	 0.0,		 0.0,
+		-4.000f,	 1.000f, 0.0f,	1.0f, 1.0f, 0.0f,	 0.0,		 1.0  
 	};
 	
 	// First line = first triangle and so on
@@ -299,10 +334,10 @@ void SceneManager::SetupForeground(){
 	 * 	Top left
 	**/
 	float foreground[] = {
-		 1.000f,	 1.000f, 0.0f,	1.0f, 0.0f, 0.0f,	 1.0,		 1.0,
-		 1.000f,	-1.000f, 0.0f,	0.0f, 1.0f, 0.0f,	 1.0,		-1.0,
-		-1.000f,	-1.000f, 0.0f,	0.0f, 0.0f, 1.0f,	-1.0,		-1.0,
-		-1.000f,	 1.000f, 0.0f,	1.0f, 1.0f, 0.0f,	-1.0,		 1.0  
+		 2.000f,	 1.000f, -1.0f,	0.5f, 0.5f, 0.5f,	 1.0,		 1.0,
+		 2.000f,	-1.000f, -1.0f,	0.5f, 0.5f, 0.5f,	 1.0,		 0.0,
+		-4.000f,	-1.000f, -1.0f,	0.5f, 0.5f, 0.5f,	 0.0,		 0.0,
+		-4.000f,	 1.000f, -1.0f,	0.5f, 0.5f, 0.5f,	 0.0,		 1.0 
 	};
 	
 	// First line = first triangle and so on
@@ -333,7 +368,7 @@ void SceneManager::SetupForeground(){
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 
-	SetupBackgroundTexture();
+	SetupForegroundTexture();
 
 	glBindVertexArray(0);
 }
@@ -351,10 +386,10 @@ void SceneManager::SetupCharacter(){
 	 * 	Top left
 	**/
 	float character[] = {
-		 0.125f,	 0.125f, 0.0f,	1.0f, 0.0f, 0.0f,	1.0/4.0,	1.0/2.0,
-		 0.125f,	-0.125f, 0.0f,	0.0f, 1.0f, 0.0f,	1.0/4.0,	0.0f,
-		-0.125f,	-0.125f, 0.0f,	0.0f, 0.0f, 1.0f,	0.0f,		0.0f,
-		-0.125f,	 0.125f, 0.0f,	1.0f, 1.0f, 0.0f,	0.0f,		1.0/2.0  
+		 0.125f,	 0.239f, 1.0f,	1.0f, 0.0f, 0.0f,	1.0/4.0,	1.0/2.0,
+		 0.125f,	-0.011f, 1.0f,	0.0f, 1.0f, 0.0f,	1.0/4.0,	0.0f,
+		-0.125f,	-0.011f, 1.0f,	0.0f, 0.0f, 1.0f,	0.0f,		0.0f,
+		-0.125f,	 0.239f, 1.0f,	1.0f, 1.0f, 0.0f,	0.0f,		1.0/2.0  
 	};
 	
 	// First line = first triangle and so on
@@ -403,10 +438,10 @@ void SceneManager::SetupBox(){
 	 * 	Top left
 	**/
 	float box[] = {
-		 0.125f,	 0.125f, 0.0f,	1.0f, 0.0f, 0.0f,	 1.0f,		 1.0f,
-		 0.125f,	-0.125f, 0.0f,	0.0f, 1.0f, 0.0f,	 1.0f,		-1.0f, 
-		-0.125f,	-0.125f, 0.0f,	0.0f, 0.0f, 1.0f,	-1.0f,		-1.0f,
-		-0.125f,	 0.125f, 0.0f,	1.0f, 1.0f, 0.0f,	-1.0f,		 1.0f  
+		 0.075f,	 0.125f, 1.0f,	1.0f, 0.0f, 0.0f,	 1.0f,		 1.0f,
+		 0.075f,	-0.000f, 1.0f,	0.0f, 1.0f, 0.0f,	 1.0f,		 0.0f, 
+		-0.075f,	-0.000f, 1.0f,	0.0f, 0.0f, 1.0f,	 0.0f,		 0.0f,
+		-0.075f,	 0.125f, 1.0f,	1.0f, 1.0f, 0.0f,	 0.0f,		 1.0f  
 	};
 
 	// First line = first triangle and so on
@@ -446,18 +481,18 @@ void SceneManager::SetupBackgroundTexture(){
 	glGenTextures(1, &backgroundTexture);
 	glBindTexture(GL_TEXTURE_2D, backgroundTexture); 
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	// Loads image, creates texture and generates mipmaps
 	int bgWidth, bgHeight, bgNrChannels;
-	unsigned char *bgData = stbi_load("Resources/Background.png", &bgWidth, &bgHeight, &bgNrChannels, 0);
+	unsigned char *bgData = stbi_load("Resources/Background.jpg", &bgWidth, &bgHeight, &bgNrChannels, 0);
 
 	if (bgData) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bgWidth, bgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, bgData);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bgWidth, bgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, bgData);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	} else {
 		std::cout << "Failed to load background texture" << std::endl;
@@ -476,8 +511,8 @@ void SceneManager::SetupForegroundTexture(){
 	glGenTextures(1, &foregroundTexture);
 	glBindTexture(GL_TEXTURE_2D, foregroundTexture); 
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -536,8 +571,8 @@ void SceneManager::SetupBoxTexture(){
 	glGenTextures(1, &boxTexture);
 	glBindTexture(GL_TEXTURE_2D, boxTexture); 
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -560,4 +595,10 @@ void SceneManager::SetupBoxTexture(){
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+bool SceneManager::TestCollision(){
+	if (characterPosition <= boxPosition + 0.075)
+		return true;
+	return false;
 }

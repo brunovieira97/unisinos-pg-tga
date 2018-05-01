@@ -19,6 +19,7 @@ public:
 	static void Resize(GLFWwindow* window, int width, int height);
 
 	void DoMovement();
+	bool TestCollision();
 	
 	void Render();
 	void RenderBackground();
@@ -43,9 +44,9 @@ public:
 	void SetupCamera2D();
 
 private:
-	GLfloat x, y, backgroundPosition, foregroundPosition, characterPosition, boxPosition;
+	GLfloat x, y, backgroundPosition, foregroundPosition, characterPosition, boxPosition, verticalPosition, offsetX, offsetY;
 
-	unsigned int backgroundTexture, foregroundTexture, characterTexture, boxTexture;
+	unsigned int backgroundTexture, foregroundTexture, characterTexture, boxTexture, timer;
 
 	GLFWwindow *window;
 	

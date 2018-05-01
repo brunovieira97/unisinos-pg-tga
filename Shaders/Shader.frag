@@ -1,12 +1,13 @@
-#version 430 core
-in vec3 ourColor;
-in vec2 TexCoord;
+#version 410
 
-out vec4 color;
+in vec2 texture_coords;
 
-// Texture sampler
-uniform sampler2D texture;
+uniform sampler2D sprite;
+uniform float offsetx;
+uniform float offsety;
 
-void main() {
-    color = texture(texture, TexCoord);
+out vec4 frag_color; 
+
+void main () {
+   frag_color = texture (sprite, vec2(texture_coords.x + offsetx, texture_coords.y + offsety));
 }
